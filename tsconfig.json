@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "module": "commonjs",
     "declaration": true,
     "outDir": "./dist",
     "strict": true,
     "inlineSourceMap": true,
-    "types": []
+    "lib": [
+      "es2017"
+    ]
   },
   "include": [
     "src/**/*"
