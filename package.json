@@ -1,0 +1,20 @@
+{
+  "name": "state-machine-tests",
+  "version": "0.0.1",
+  "description": "Generative state machine testing",
+  "main": "index.js",
+  "scripts": {
+    "tsc": "tsc"
+  },
+  "keywords": [
+    "testing",
+    "state",
+    "state machine",
+    "generative"
+  ],
+  "author": "George Pittarelli <g@gjp.cc>",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "3.5.3"
+  }
+}
