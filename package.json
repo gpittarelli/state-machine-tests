@@ -4,7 +4,8 @@
   "description": "Generative state machine testing",
   "main": "index.js",
   "scripts": {
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "test": "jest  --rootDir test --testMatch '**/*.ts'"
   },
   "keywords": [
     "testing",
@@ -15,6 +16,7 @@
   "author": "George Pittarelli <g@gjp.cc>",
   "license": "MIT",
   "devDependencies": {
+    "jest": "24.8.0",
     "typescript": "3.5.3"
   }
 }
