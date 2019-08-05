@@ -95,6 +95,10 @@ class StateMachineError extends Error {
 	walk: Walk = ['', ['']];
 }
 
+/**
+ * Given a walk and a state machine, step through the walk running the
+ * state mutations at each step.
+ */
 export async function runWalk<T>(
 	machine: StateMachine<T>,
 	walk: Walk,
@@ -143,9 +147,10 @@ Hit error: ${e.message}`,
 	}
 }
 
-function canContinue<T>(machine: StateMachine<T>, walk: Walk) {}
-
-export function walk<T>(machine: StateMachine<T>, walk: Walk) {
+/**
+ * Return the state name that a walk ends up at
+ */
+export function end<T>(machine: StateMachine<T>, walk: Walk): StateName {
 	const [startingState, edges] = walk;
 
 	return edges.reduce((state, edge) => {
@@ -154,24 +159,23 @@ export function walk<T>(machine: StateMachine<T>, walk: Walk) {
 			throw new Error('Invalid walk');
 		}
 
+		if (!stateType.edges[edge]) {
+			throw new Error(`No edge "${edge}" at state "${state}"`);
+		}
+
 		return stateType.edges[edge].to;
 	}, startingState);
 }
 
 export function isCycle<T>(machine: StateMachine<T>, walk: Walk): boolean {
-	const [startingState, edges] = walk;
-
-	// 	let state = startingState;
-	// 	for (const e of edges) {
-	// 		state = machine[st].edges;
-	// 	}
-
-	return true;
+	const [startingState] = walk;
+	return end(machine, walk) === startingState;
 }
 
 /**
  * Return segments of the given walk that start and stop at the same
- * state. Segments are denoted as [start, end] pairs (both sides inclusive).
+ * state. Segments are denoted as [start, end) pairs (start inclusive,
+ * end exclusive -- to work well with slice()).
  */
 export function* cycles<T>(
 	machine: StateMachine<T>,
@@ -183,12 +187,19 @@ export function* cycles<T>(
 	// We generally are more interested in larger cycles that can be
 	// removed, so start looking for cycle from the beginning and
 	for (let i = 0; i < edges.length; ++i) {
-		for (let j = edges.length - 1; j >= i; --j) {
+		for (let j = edges.length; j > i; --j) {
 			// consider the edges from i..j
 			if (isCycle(machine, [startAt, edges.slice(i, j)])) {
 				yield [i, j];
 			}
 		}
+
+		const stateType = machine[startAt];
+		if (stateType.type === 'terminate') {
+			throw new Error('Invalid walk');
+		}
+
+		startAt = stateType.edges[edges[i]].to;
 	}
 }
 
