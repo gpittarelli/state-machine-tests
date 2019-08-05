@@ -1,4 +1,4 @@
-import {sample, normalRandom} from './utils';
+import {map, removeSlice, sample, normalRandom} from './utils';
 
 type StateName = string;
 type TransitionName = string;
@@ -202,6 +202,12 @@ export function* cycles<T>(
 		startAt = stateType.edges[edges[i]].to;
 	}
 }
+
+export const reductions = <T>(machine: StateMachine<T>, walk: Walk) =>
+	map(cycles(machine, walk), slice => [
+		walk[0],
+		removeSlice(walk[1], ...slice),
+	]);
 
 export async function minimize<T>(
 	machine: StateMachine<T>,

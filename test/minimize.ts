@@ -1,4 +1,4 @@
-import {cycles, isCycle, minimize, end} from '../src/';
+import {cycles, isCycle, minimize, reductions, end} from '../src/';
 
 const machine = {
 	init: {type: 'start', edges: {initialize: {to: 'step1'}}},
@@ -28,6 +28,15 @@ test('cycles', () => {
 	expect(
 		Array.from(cycles(machine, ['step1', ['foo', 'back', 'foo']])),
 	).toStrictEqual([[0, 2], [1, 3]]);
+});
+
+test('reductions', () => {
+	expect(
+		Array.from(reductions(machine, ['init', ['initialize', 'foo', 'bar']])),
+	).toStrictEqual([]);
+	expect(
+		Array.from(reductions(machine, ['step1', ['foo', 'back', 'foo', 'bar']])),
+	).toStrictEqual([['step1', ['foo', 'bar']], ['step1', ['foo', 'bar']]]);
 });
 
 test.skip('minimize', () => {
