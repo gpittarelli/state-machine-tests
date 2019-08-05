@@ -30,3 +30,11 @@ export function* take<T>(items: Iterator<T>, n: number): IterableIterator<T> {
 		it = items.next();
 	}
 }
+
+export function* map<A, B>(items: Iterator<A>, f: (a: A) => B): IterableIterator<B> {
+	let it = items.next();
+	while (!it.done) {
+		yield f(it.value);
+		it = items.next();
+	}
+}
