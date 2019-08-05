@@ -27,14 +27,16 @@ type TerminateState<StateT> = {
 	edges: {};
 };
 
+type IntermediateState<StateT> = {
+	type?: never;
+	validate: (state: StateT) => boolean;
+	edges: {[name in TransitionName]: Transition<StateT>};
+};
+
 type State<StateT> =
 	| StartState<StateT>
 	| TerminateState<StateT>
-	| {
-			type?: never;
-			validate: (state: StateT) => boolean;
-			edges: {[name in TransitionName]: Transition<StateT>};
-	  };
+	| IntermediateState<StateT>;
 
 type StateMachine<StateT> = {[name in StateName]: State<StateT>};
 
@@ -139,6 +141,62 @@ Hit error: ${e.message}`,
 		newE.stack = e.stack;
 		throw newE;
 	}
+}
+
+function canContinue<T>(machine: StateMachine<T>, walk: Walk) {}
+
+export function walk<T>(machine: StateMachine<T>, walk: Walk) {
+	const [startingState, edges] = walk;
+
+	return edges.reduce((state, edge) => {
+		const stateType = machine[state];
+		if (stateType.type === 'terminate') {
+			throw new Error('Invalid walk');
+		}
+
+		return stateType.edges[edge].to;
+	}, startingState);
+}
+
+export function isCycle<T>(machine: StateMachine<T>, walk: Walk): boolean {
+	const [startingState, edges] = walk;
+
+	// 	let state = startingState;
+	// 	for (const e of edges) {
+	// 		state = machine[st].edges;
+	// 	}
+
+	return true;
+}
+
+/**
+ * Return segments of the given walk that start and stop at the same
+ * state. Segments are denoted as [start, end] pairs (both sides inclusive).
+ */
+export function* cycles<T>(
+	machine: StateMachine<T>,
+	walk: Walk,
+): IterableIterator<[number, number]> {
+	const [startingState, edges] = walk;
+	let startAt = startingState;
+
+	// We generally are more interested in larger cycles that can be
+	// removed, so start looking for cycle from the beginning and
+	for (let i = 0; i < edges.length; ++i) {
+		for (let j = edges.length - 1; j >= i; --j) {
+			// consider the edges from i..j
+			if (isCycle(machine, [startAt, edges.slice(i, j)])) {
+				yield [i, j];
+			}
+		}
+	}
+}
+
+export async function minimize<T>(
+	machine: StateMachine<T>,
+	walk: Walk,
+): Promise<Walk> {
+	return walk;
 }
 
 export default async function check<T>(
