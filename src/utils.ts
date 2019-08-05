@@ -38,3 +38,11 @@ export function* map<A, B>(items: Iterator<A>, f: (a: A) => B): IterableIterator
 		it = items.next();
 	}
 }
+
+/**
+ * The complement of Array.prototype.slice: removes the slices and
+ * returns everything else.
+ */
+export function removeSlice<T>(arr: T[], start: number, end: number) {
+  return [...arr.slice(0, start), ...arr.slice(end, arr.length)];
+}
