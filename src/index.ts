@@ -86,6 +86,13 @@ export function* generateWalks<T>(
 	}
 }
 
+class StateMachineError extends Error {
+	/**
+	 * The walk that triggered the error.
+	 */
+	walk: Walk = ['', ['']];
+}
+
 export async function runWalk<T>(
 	machine: StateMachine<T>,
 	walk: Walk,
@@ -122,12 +129,13 @@ export async function runWalk<T>(
 
 		return stateData;
 	} catch (e) {
-		const newE = new Error(
+		const newE = new StateMachineError(
 			`While at state "${stateName}" and running edge: "${edge}" (index ${index})
 In walk from "${startingState}":
 ${log.join('\n    ')}
 Hit error: ${e.message}`,
 		);
+		newE.walk = [startingState, edges.slice(0, index + 1)];
 		newE.stack = e.stack;
 		throw newE;
 	}
