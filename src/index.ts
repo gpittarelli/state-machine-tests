@@ -1,4 +1,4 @@
-import {map, removeSlice, sample, normalRandom} from './utils';
+import {filter, throws, map, removeSlice, sample, normalRandom} from './utils';
 
 type StateName = string;
 type TransitionName = string;
@@ -123,6 +123,10 @@ export async function runWalk<T>(
 				break;
 			}
 
+			if (!state.edges[edge]) {
+				throw new Error('Unknown edge: ' + edge);
+			}
+
 			stateData = await state.edges[edge].apply(stateData);
 			const nextStateName = state.edges[edge].to;
 			log.push(`${stateName} -> ${nextStateName} via "${edge}"`);
@@ -203,7 +207,10 @@ export function* cycles<T>(
 	}
 }
 
-export const reductions = <T>(machine: StateMachine<T>, walk: Walk) =>
+export const reductions = <T>(
+	machine: StateMachine<T>,
+	walk: Walk,
+): IterableIterator<Walk> =>
 	map(cycles(machine, walk), slice => [
 		walk[0],
 		removeSlice(walk[1], ...slice),
@@ -213,7 +220,19 @@ export async function minimize<T>(
 	machine: StateMachine<T>,
 	walk: Walk,
 ): Promise<Walk> {
-	return walk;
+	let minWalk = walk;
+
+	for (const proposedWalk of reductions(machine, walk)) {
+		try {
+			await runWalk(machine, proposedWalk);
+		} catch (e) {
+			if (proposedWalk[1].length < minWalk[1].length) {
+				minWalk = proposedWalk;
+			}
+		}
+	}
+
+	return minWalk;
 }
 
 export default async function check<T>(
