@@ -15,21 +15,17 @@ type Transition<StateT> = {
 
 type StartState<StateT> = {
 	type: 'start';
-	validate: (state: StateT) => boolean;
-	edges: {
-		[name in TransitionName]: Transition<StateT> | StartTransition<StateT>;
-	};
+	edges: {[name in TransitionName]: StartTransition<StateT>};
 };
 
 type TerminateState<StateT> = {
 	type: 'terminate';
-	validate: (state: StateT) => boolean;
-	edges: {};
+	validate?: (state: StateT) => void;
 };
 
 type IntermediateState<StateT> = {
 	type?: never;
-	validate: (state: StateT) => boolean;
+	validate?: (state: StateT) => void;
 	edges: {[name in TransitionName]: Transition<StateT>};
 };
 
@@ -38,7 +34,7 @@ type State<StateT> =
 	| TerminateState<StateT>
 	| IntermediateState<StateT>;
 
-type StateMachine<StateT> = {[name in StateName]: State<StateT>};
+export type StateMachine<StateT> = {[name in StateName]: State<StateT>};
 
 type Walk = [StateName, TransitionName[]];
 
@@ -63,18 +59,20 @@ export function randomWalk<T>(
 		throw new Error('State machine has no starting nodes');
 	}
 
-	let state: StateName = start;
+	let stateName: StateName = start;
 	for (let i = 0; i < length; ++i) {
-		if (machine[state].type === 'terminate') {
+		const state = machine[stateName];
+		if (state.type === 'terminate') {
 			break;
 		}
 
-		const nextEdge = sample(Object.entries(machine[state].edges));
+		const nextEdge = sample(Object.entries(state.edges));
 		if (!nextEdge) {
 			// A state with no edges is an implicit terminate node
 			break;
 		}
 		acc.push(nextEdge[0]);
+		stateName = nextEdge[1].to;
 	}
 
 	return [start, acc];
@@ -131,7 +129,10 @@ export async function runWalk<T>(
 			const nextStateName = state.edges[edge].to;
 			log.push(`${stateName} -> ${nextStateName} via "${edge}"`);
 
-			machine[nextStateName].validate(stateData);
+			const currentStateType = machine[nextStateName];
+			if (currentStateType.type !== 'start' && currentStateType.validate) {
+				currentStateType.validate(stateData);
+			}
 			stateName = nextStateName;
 
 			index++;

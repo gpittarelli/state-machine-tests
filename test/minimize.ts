@@ -1,9 +1,15 @@
-import {cycles, isCycle, minimize, reductions, end} from '../src/';
+import check, {
+	StateMachine,
+	cycles,
+	isCycle,
+	minimize,
+	reductions,
+	end,
+} from '../src/';
 
-const machine = {
+const machine: StateMachine<void> = {
 	step0: {
 		type: 'start',
-		validate: () => {},
 		edges: {init: {to: 'step1', apply: () => {}}},
 	},
 	step1: {
@@ -17,31 +23,30 @@ const machine = {
 			back: {to: 'step1', apply: () => {}},
 		},
 	},
-	step3: {type: 'terminate', validate: () => {}, apply: () => {}},
+	step3: {type: 'terminate', validate: () => {}},
 };
 
-const machineThatFails = {
+const machineThatFails: StateMachine<number> = {
 	step0: {
 		type: 'start',
-		validate: () => {},
 		edges: {init: {to: 'step1', apply: () => 1}},
 	},
 	step1: {
-		validate: s => {
+		validate: (s: number) => {
 			if (s >= 3) {
 				throw new Error('step1 fail');
 			}
 		},
-		edges: {foo: {to: 'step2', apply: s => s + 1}},
+		edges: {foo: {to: 'step2', apply: (s: number) => s + 1}},
 	},
 	step2: {
 		validate: () => {},
 		edges: {
-			bar: {to: 'step3', apply: () => {}},
-			back: {to: 'step1', apply: s => s},
+			bar: {to: 'step3', apply: (s: number) => s},
+			back: {to: 'step1', apply: (s: number) => s},
 		},
 	},
-	step3: {type: 'terminate', validate: () => {}, apply: () => {}},
+	step3: {type: 'terminate', validate: () => {}},
 };
 
 test('end', () => {
