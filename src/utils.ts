@@ -31,7 +31,10 @@ export function* take<T>(items: Iterator<T>, n: number): IterableIterator<T> {
 	}
 }
 
-export function* map<A, B>(items: Iterator<A>, f: (a: A) => B): IterableIterator<B> {
+export function* map<A, B>(
+	items: Iterator<A>,
+	f: (a: A) => B,
+): IterableIterator<B> {
 	let it = items.next();
 	while (!it.done) {
 		yield f(it.value);
@@ -39,10 +42,55 @@ export function* map<A, B>(items: Iterator<A>, f: (a: A) => B): IterableIterator
 	}
 }
 
+export function* filter<T>(
+	items: Iterator<T>,
+	f: (x: T) => boolean,
+): IterableIterator<T> {
+	let it = items.next();
+	while (!it.done) {
+		if (f(it.value)) {
+			yield it.value;
+		}
+		it = items.next();
+	}
+}
+
+export function reduce<T, S>(
+	items: Iterator<T>,
+	f: (s: S, x: T) => S,
+  state: S,
+): S {
+	let it = items.next();
+	while (!it.done) {
+		state = f(state, it.value);
+		it = items.next();
+	}
+  return state;
+}
+
+export function min<T>(
+	items: Iterator<T>,
+	f: (a: T, b: T) => T,
+): T {
+  const it = items.next();
+  return reduce(items, (a, b) => {
+    return f(a, b);
+  }, it.value);
+}
+
+export function throws(fn: (...a: any[]) => any): boolean {
+  try {
+    fn();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 /**
  * The complement of Array.prototype.slice: removes the slices and
  * returns everything else.
  */
 export function removeSlice<T>(arr: T[], start: number, end: number) {
-  return [...arr.slice(0, start), ...arr.slice(end, arr.length)];
+	return [...arr.slice(0, start), ...arr.slice(end, arr.length)];
 }
