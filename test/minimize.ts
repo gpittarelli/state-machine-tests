@@ -82,26 +82,40 @@ test('reductions', () => {
 });
 
 test('minimize', async () => {
-	expect(
-		await minimize(machine, ['step0', ['init', 'foo', 'back']]),
-	).toStrictEqual(['step0', ['init', 'foo', 'back']]);
+	const fakeError = new Error();
 
-	expect(
-		await minimize(machineThatFails, [
-			'step0',
+	await expect(
+		minimize(machine, ['step0', ['init', 'foo', 'back']], fakeError),
+	).rejects.toBe(fakeError);
+
+	await expect(
+		minimize(
+			machineThatFails,
 			[
-				'init',
-				'foo',
-				'back',
-				'foo',
-				'back',
-				'foo',
-				'back',
-				'foo',
-				'back',
-				'foo',
-				'back',
+				'step0',
+				[
+					'init',
+					'foo',
+					'back',
+					'foo',
+					'back',
+					'foo',
+					'back',
+					'foo',
+					'back',
+					'foo',
+					'back',
+				],
 			],
-		]),
-	).toStrictEqual(['step0', ['init', 'foo', 'back', 'foo', 'back']]);
+			fakeError,
+		),
+	).rejects.toMatchObject({
+		walk: ['step0', ['init', 'foo', 'back', 'foo', 'back']],
+	});
+});
+
+test('check', async () => {
+	await expect(check(machineThatFails)).rejects.toMatchObject({
+		walk: ['step0', ['init', 'foo', 'back', 'foo', 'back']],
+	});
 });

@@ -1,4 +1,4 @@
-import {filter, throws, map, removeSlice, sample, normalRandom} from './utils';
+import {take, map, removeSlice, sample, normalRandom} from './utils';
 
 type StateName = string;
 type TransitionName = string;
@@ -45,7 +45,7 @@ export function starts<T>(machine: StateMachine<T>): StateName[] {
 }
 
 export function randomWalkLength() {
-	return Math.max(3, normalRandom(10, 20));
+	return Math.ceil(Math.max(3, normalRandom(10, 20)));
 }
 
 export function randomWalk<T>(
@@ -220,8 +220,10 @@ export const reductions = <T>(
 export async function minimize<T>(
 	machine: StateMachine<T>,
 	walk: Walk,
+	existingError: Error,
 ): Promise<Walk> {
 	let minWalk = walk;
+	let minError = existingError;
 
 	for (const proposedWalk of reductions(machine, walk)) {
 		try {
@@ -229,13 +231,27 @@ export async function minimize<T>(
 		} catch (e) {
 			if (proposedWalk[1].length < minWalk[1].length) {
 				minWalk = proposedWalk;
+				minError = e;
 			}
 		}
 	}
 
-	return minWalk;
+	throw minError;
 }
 
 export default async function check<T>(
 	machine: StateMachine<T>,
-): Promise<void> {}
+	{limit = 200} = {},
+): Promise<void> {
+	try {
+		for (const walk of take(generateWalks(machine), limit)) {
+			await runWalk(machine, walk);
+		}
+	} catch (e) {
+		if (e instanceof StateMachineError) {
+			await minimize(machine, e.walk, e);
+		}
+
+		throw e;
+	}
+}
