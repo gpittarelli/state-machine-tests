@@ -20,7 +20,7 @@ export function normalRandom(min = -1, max = 1) {
 }
 
 export function sample<T>(items: T[]): T | undefined {
-	return items[random(0, items.length - 1)];
+	return items[random(0, items.length)];
 }
 
 export function* take<T>(items: Iterator<T>, n: number): IterableIterator<T> {
